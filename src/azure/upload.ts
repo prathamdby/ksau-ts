@@ -156,7 +156,10 @@ export async function uploadChunk(
       "Content-Length": String(expectedSize),
       "Content-Type": "application/octet-stream",
     },
-    body: chunk instanceof Uint8Array ? (chunk.buffer as ArrayBuffer) : chunk,
+    body:
+      chunk instanceof Uint8Array
+        ? (chunk.buffer as ArrayBuffer)
+        : await chunk.arrayBuffer(),
   });
 
   switch (resp.status) {
