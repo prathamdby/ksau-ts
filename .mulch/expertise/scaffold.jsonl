@@ -1,0 +1,1 @@
+{"type":"convention","content":"ov sling creates worktree+metadata but tmux pane must be created separately (tmux new-session -d -s <session-name>) before sending keys. The sling command fails silently if the pane doesn't exist.","classification":"tactical","recorded_at":"2026-03-01T08:08:54.763Z","id":"mx-c5122c"}
