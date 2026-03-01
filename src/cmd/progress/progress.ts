@@ -100,7 +100,10 @@ export class ProgressTracker {
 
   private basicStyle(percent: number): string {
     const width = this.width - 2;
-    const complete = Math.max(0, Math.min(width, Math.floor((percent / 100) * width)));
+    const complete = Math.max(
+      0,
+      Math.min(width, Math.floor((percent / 100) * width)),
+    );
     return `[${"=".repeat(complete)}>${" ".repeat(Math.max(0, width - complete - 1))}] ${percent.toFixed(1)}% | ${formatBytes(this.lastSpeed)}/s`;
   }
 

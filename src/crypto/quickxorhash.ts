@@ -70,14 +70,14 @@ export class QuickXorHash {
     return this.checkSum();
   }
 
-  reset(): void {
-    this.data = new Uint8Array(dataSize);
-    this.size = 0n;
-  }
-
   static sum(data: Uint8Array): Uint8Array {
     const q = new QuickXorHash();
     q.write(data);
     return q.checkSum();
+  }
+
+  reset(): void {
+    this.data = new Uint8Array(dataSize);
+    this.size = 0n;
   }
 }

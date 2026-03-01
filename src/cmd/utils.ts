@@ -1,13 +1,13 @@
-import os from "node:os";
 import fs from "node:fs";
-import path from "node:path";
 import { readFile } from "node:fs/promises";
+import os from "node:os";
+import path from "node:path";
 import { AzureClient } from "../azure/client.ts";
-import { parseRcloneConfigData, getAvailableRemotes } from "../azure/config.ts";
+import { getAvailableRemotes, parseRcloneConfigData } from "../azure/config.ts";
 import { KibiByte } from "../azure/constants.ts";
 import { decrypt } from "../crypto/algo.ts";
 import { QuickXorHash } from "../crypto/quickxorhash.ts";
-import { ProgressTracker, type ProgressStyle } from "./progress/progress.ts";
+import { type ProgressStyle, ProgressTracker } from "./progress/progress.ts";
 
 const hashRetries = 5;
 const hashRetryDelay = 10000;
@@ -32,7 +32,7 @@ export function getConfigPath(): string {
   ) {
     configDir = path.join(os.homedir(), ".ksau", ".conf");
   } else {
-    throw new Error("unsupported OS: " + platform);
+    throw new Error(`unsupported OS: ${platform}`);
   }
 
   fs.mkdirSync(configDir, { recursive: true });
@@ -62,7 +62,7 @@ export function getChunkSize(fileSize: bigint): bigint {
 }
 
 export async function selectRemoteAutomatically(
-  fileSize: bigint,
+  _fileSize: bigint,
   progressStyle: ProgressStyle,
 ): Promise<string> {
   const rcloneConfigData = await getConfigData();
@@ -120,13 +120,15 @@ export async function verifyFileIntegrity(
   filePath: string,
   fileId: string,
   client: AzureClient,
+  retries = hashRetries,
+  retryDelay = hashRetryDelay,
 ): Promise<void> {
   console.log("Verifying file integrity...");
 
   let fileHash = "";
   let lastErr: unknown;
 
-  for (let i = 0; i < hashRetries; i++) {
+  for (let i = 0; i < retries; i++) {
     try {
       fileHash = await client.getQuickXorHash(fileId);
       lastErr = undefined;
@@ -134,10 +136,10 @@ export async function verifyFileIntegrity(
     } catch (err) {
       lastErr = err;
       console.log(
-        `Attempt ${i + 1}/${hashRetries}: Failed to get file hash: ${(err as Error).message}`,
+        `Attempt ${i + 1}/${retries}: Failed to get file hash: ${(err as Error).message}`,
       );
-      if (i < hashRetries - 1) {
-        await new Promise((resolve) => setTimeout(resolve, hashRetryDelay));
+      if (i < retries - 1) {
+        await new Promise((resolve) => setTimeout(resolve, retryDelay));
       }
     }
   }
@@ -182,7 +184,7 @@ export async function verifyFileIntegrity(
 
   if (localHash === fileHash) {
     console.log(
-      ColorGreen + "File integrity verified successfully" + ColorReset,
+      `${ColorGreen}File integrity verified successfully${ColorReset}`,
     );
   } else {
     console.log(

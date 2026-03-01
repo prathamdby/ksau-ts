@@ -1,5 +1,5 @@
 import * as openpgp from "openpgp";
-import { privkey, passphrase } from "./placeholder.ts";
+import { passphrase, privkey } from "./placeholder.ts";
 
 async function getPrivateKey(): Promise<openpgp.PrivateKey> {
   let privateKey: openpgp.PrivateKey;

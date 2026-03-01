@@ -1,9 +1,14 @@
-import { type Command } from "commander";
-import path from "node:path";
 import { statSync } from "node:fs";
+import path from "node:path";
+import type { Command } from "commander";
 import { AzureClient } from "../azure/client.ts";
 import { KibiByte } from "../azure/constants.ts";
 import type { UploadParams } from "../azure/types.ts";
+import {
+  type ProgressStyle,
+  ProgressTracker,
+  validStyles,
+} from "./progress/progress.ts";
 import {
   ColorGreen,
   ColorReset,
@@ -12,11 +17,6 @@ import {
   selectRemoteAutomatically,
   verifyFileIntegrity,
 } from "./utils.ts";
-import {
-  ProgressTracker,
-  validStyles,
-  type ProgressStyle,
-} from "./progress/progress.ts";
 
 export function registerUploadCommand(program: Command): void {
   program
@@ -152,9 +152,7 @@ export function registerUploadCommand(program: Command): void {
               " is not multiple of 320KiB, upload may not be optimal",
           );
         } else {
-          console.log(
-            "Using user-specified chunk size: " + chunkSizeBig + " bytes",
-          );
+          console.log(`Using user-specified chunk size: ${chunkSizeBig} bytes`);
         }
       }
 
@@ -185,7 +183,7 @@ export function registerUploadCommand(program: Command): void {
 
       const rootFolder = client.remoteRootFolder;
       const fullRemotePath = path.posix.join(rootFolder, remoteFilePath);
-      console.log("Full remote path: " + fullRemotePath);
+      console.log(`Full remote path: ${fullRemotePath}`);
 
       let tracker: ProgressTracker | null = new ProgressTracker(
         fileSize,
@@ -200,7 +198,7 @@ export function registerUploadCommand(program: Command): void {
           try {
             tracker.updateProgress(uploadedBytes);
           } catch (r) {
-            console.log("\nWarning: Progress update failed: " + r);
+            console.log(`\nWarning: Progress update failed: ${r}`);
             tracker = null;
           }
         };
@@ -243,7 +241,7 @@ export function registerUploadCommand(program: Command): void {
             .join(remoteFolder, remoteFileName)
             .replace(/ /g, "%20");
         }
-        const downloadURL = baseURL + "/" + urlPath;
+        const downloadURL = `${baseURL}/${urlPath}`;
         console.log(
           ColorGreen +
             "Download URL:" +
@@ -255,7 +253,13 @@ export function registerUploadCommand(program: Command): void {
         );
 
         if (!skipHash) {
-          await verifyFileIntegrity(filePath, fileID, client);
+          await verifyFileIntegrity(
+            filePath,
+            fileID,
+            client,
+            hashRetries,
+            hashRetryDelay,
+          );
         }
       } else {
         if (tracker !== null) {

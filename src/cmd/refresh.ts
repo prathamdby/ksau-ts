@@ -1,5 +1,5 @@
-import { type Command } from "commander";
 import fs from "node:fs";
+import type { Command } from "commander";
 import { getConfigPath } from "./utils.ts";
 
 const DEFAULT_URL =

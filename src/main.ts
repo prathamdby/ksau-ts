@@ -1,10 +1,10 @@
-import { program } from "./cmd/root.ts";
-import { registerVersionCommand } from "./cmd/version.ts";
-import { registerRefreshCommand } from "./cmd/refresh.ts";
+import { registerHelpCommand } from "./cmd/help.ts";
 import { registerListRemotesCommand } from "./cmd/listRemotes.ts";
 import { registerQuotaCommand } from "./cmd/quota.ts";
-import { registerHelpCommand } from "./cmd/help.ts";
+import { registerRefreshCommand } from "./cmd/refresh.ts";
+import { program } from "./cmd/root.ts";
 import { registerUploadCommand } from "./cmd/upload.ts";
+import { registerVersionCommand } from "./cmd/version.ts";
 
 registerVersionCommand(program);
 registerRefreshCommand(program);
