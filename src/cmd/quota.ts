@@ -9,7 +9,13 @@ export function registerQuotaCommand(program: Command): void {
     .command("quota")
     .description("Display OneDrive quota information")
     .action(async () => {
-      const configData = await getConfigData();
+      let configData: Uint8Array;
+      try {
+        configData = await getConfigData();
+      } catch (err) {
+        console.log("Failed to read config file:", (err as Error).message);
+        process.exit(1);
+      }
       const rcloneConfigFile = parseRcloneConfigData(configData);
       const availRemotes = getAvailableRemotes(rcloneConfigFile);
       let exitCode = 0;
