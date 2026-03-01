@@ -1,13 +1,17 @@
 import type { AzureClient } from "./client.ts";
 import type { DriveQuota } from "./types.ts";
 
-export async function getDriveQuota(client: AzureClient): Promise<DriveQuota> {
+export async function getDriveQuota(
+  client: AzureClient,
+  signal?: AbortSignal,
+): Promise<DriveQuota> {
   await client.ensureTokenValid();
 
   const url = "https://graph.microsoft.com/v1.0/me/drive/quota";
 
   const resp = await fetch(url, {
     headers: { Authorization: `Bearer ${client.accessToken}` },
+    signal,
   });
 
   if (resp.status !== 200) {
