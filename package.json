@@ -1,0 +1,12 @@
+{
+  "name": "ksau-ts",
+  "type": "module",
+  "scripts": {
+    "build": "bun build src/main.ts --outfile ksau-ts-dev",
+    "build:gh": "make build_gh_actions"
+  },
+  "dependencies": {
+    "commander": "^14.0.3",
+    "openpgp": "^6.3.0"
+  }
+}
