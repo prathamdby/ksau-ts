@@ -18,6 +18,9 @@ jobs:
         with:
           bun-version: latest
 
+      - name: Install Dependencies
+        run: bun install
+
       - name: Get Version from Makefile
         id: get_version
         run: |
