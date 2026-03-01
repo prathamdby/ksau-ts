@@ -16,18 +16,11 @@ export async function decrypt(data: Uint8Array): Promise<Uint8Array> {
   const message = await openpgp.readMessage({
     armoredMessage: Buffer.from(data).toString(),
   });
-  const originalConsoleError = console.error;
-  console.error = () => {};
-  let result: Awaited<ReturnType<typeof openpgp.decrypt>>;
-  try {
-    result = await openpgp.decrypt({
-      message,
-      decryptionKeys: privateKey,
-      format: "binary",
-    });
-  } finally {
-    console.error = originalConsoleError;
-  }
+  const result = await openpgp.decrypt({
+    message,
+    decryptionKeys: privateKey,
+    format: "binary",
+  });
   return result.data as Uint8Array;
 }
 
