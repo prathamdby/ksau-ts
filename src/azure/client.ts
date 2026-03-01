@@ -1,4 +1,8 @@
 import { parseRcloneConfigData } from "./config.ts";
+import { getDriveQuota } from "./quota.ts";
+import { upload } from "./upload.ts";
+import { getQuickXorHash } from "./hash.ts";
+import type { DriveQuota, UploadParams } from "./types.ts";
 
 export class AzureClient {
   clientId: string;
@@ -142,5 +146,17 @@ export class AzureClient {
     this.expiration = new Date(
       Date.now() + responseData.expires_in * 1000
     );
+  }
+
+  getDriveQuota(): Promise<DriveQuota> {
+    return getDriveQuota(this);
+  }
+
+  upload(params: UploadParams): Promise<string> {
+    return upload(this, params);
+  }
+
+  getQuickXorHash(fileId: string): Promise<string> {
+    return getQuickXorHash(this, fileId);
   }
 }

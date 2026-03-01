@@ -1,1 +1,1 @@
-export const KibiByte = 1024;
+export const KibiByte = 1024n;
