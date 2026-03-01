@@ -1,3 +1,5 @@
+const SPEED_WINDOW = 5;
+
 export type ProgressStyle = "basic" | "blocks" | "modern" | "emoji" | "minimal";
 
 export function validStyles(): ProgressStyle[] {
@@ -42,6 +44,7 @@ export class ProgressTracker {
   width: number;
   lastChunkSize: bigint;
   lastSpeed: number;
+  speedSamples: number[];
 
   constructor(totalSize: bigint, style: ProgressStyle) {
     this.totalSize = totalSize;
@@ -53,6 +56,7 @@ export class ProgressTracker {
     this.width = 40;
     this.lastChunkSize = 0n;
     this.lastSpeed = 0;
+    this.speedSamples = [];
   }
 
   updateProgress(uploadedSize: bigint): void {
@@ -63,7 +67,12 @@ export class ProgressTracker {
     const chunkSize = uploadedSize - this.lastChunkSize;
     const speed = Number(chunkSize) / elapsed;
     if (elapsed >= 1.0) {
-      this.lastSpeed = speed;
+      this.speedSamples.push(speed);
+      if (this.speedSamples.length > SPEED_WINDOW) {
+        this.speedSamples.shift();
+      }
+      this.lastSpeed =
+        this.speedSamples.reduce((a, b) => a + b, 0) / this.speedSamples.length;
       this.lastUpdate = now;
       this.lastChunkSize = uploadedSize;
     }
