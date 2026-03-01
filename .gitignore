@@ -1,0 +1,4 @@
+node_modules/
+*.conf
+src/crypto/privkey.pem
+src/crypto/passphrase.txt
