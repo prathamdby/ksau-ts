@@ -1,10 +1,16 @@
-import { Command } from "commander";
+import { program } from './cmd/root.ts'
+import { registerVersionCommand } from './cmd/version.ts'
+import { registerRefreshCommand } from './cmd/refresh.ts'
+import { registerListRemotesCommand } from './cmd/listRemotes.ts'
+import { registerQuotaCommand } from './cmd/quota.ts'
+import { registerHelpCommand } from './cmd/help.ts'
+import { registerUploadCommand } from './cmd/upload.ts'
 
-const program = new Command();
+registerVersionCommand(program)
+registerRefreshCommand(program)
+registerListRemotesCommand(program)
+registerQuotaCommand(program)
+registerHelpCommand(program)
+registerUploadCommand(program)
 
-program
-  .name("ksau-ts")
-  .description("TypeScript + Bun rewrite of ksau-go")
-  .version("1.0.0");
-
-program.parse(process.argv);
+program.parse(process.argv)
