@@ -1,15 +1,17 @@
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 
-const embeddedPrivkey = (Bun.embeddedFiles as unknown as Record<string, { text(): Promise<string> } | undefined>)['privkey.pem']
-const embeddedPassphrase = (Bun.embeddedFiles as unknown as Record<string, { text(): Promise<string> } | undefined>)['passphrase.txt']
+const embedded = Bun.embeddedFiles as unknown as Record<string, { text(): Promise<string> } | undefined>
 
-export const privkey: string = embeddedPrivkey
-  ? await embeddedPrivkey.text()
-  : readFileSync(join(import.meta.dir, 'privkey.pem'), 'utf8')
+// In compiled binaries without --asset, fall back to cwd since import.meta.dir is //root
+const baseDir = embedded['privkey.pem'] ? import.meta.dir : process.cwd()
+
+export const privkey: string = embedded['privkey.pem']
+  ? await embedded['privkey.pem'].text()
+  : readFileSync(join(baseDir, 'src/crypto/privkey.pem'), 'utf8')
 
 export const passphrase: string = (
-  embeddedPassphrase
-    ? await embeddedPassphrase.text()
-    : readFileSync(join(import.meta.dir, 'passphrase.txt'), 'utf8')
+  embedded['passphrase.txt']
+    ? await embedded['passphrase.txt'].text()
+    : readFileSync(join(baseDir, 'src/crypto/passphrase.txt'), 'utf8')
 ).trimEnd()
