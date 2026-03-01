@@ -1,10 +1,13 @@
-import { Command } from 'commander'
+import { Command } from "commander";
 
-export const program = new Command()
+export const program = new Command();
 
 program
-  .name('ksau-ts')
+  .name("ksau-ts")
   .description(
-    'ksau-ts is a command line tool for performing OneDrive operations\nlike uploading files and checking quota information across multiple\nOneDrive configurations.'
+    "ksau-ts is a command line tool for performing OneDrive operations\nlike uploading files and checking quota information across multiple\nOneDrive configurations.",
   )
-  .option('-c, --remote-config <name>', 'Name of the remote configuration section in rclone.conf')
+  .option(
+    "-c, --remote-config <name>",
+    "Name of the remote configuration section in rclone.conf",
+  );

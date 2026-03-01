@@ -4,7 +4,7 @@ import type { UploadParams } from "./types.ts";
 
 export async function upload(
   client: AzureClient,
-  params: UploadParams
+  params: UploadParams,
 ): Promise<string> {
   console.log("Starting file upload with upload session...");
 
@@ -37,7 +37,7 @@ export async function upload(
           chunk,
           start,
           end,
-          fileSize
+          fileSize,
         );
         if (success) {
           totalUploaded += end - start + 1n;
@@ -58,25 +58,25 @@ export async function upload(
             try {
               const newURL = await createUploadSession(
                 client,
-                params.remoteFilePath
+                params.remoteFilePath,
               );
               uploadURL = newURL;
               console.log("Created new upload session after error");
             } catch (sessionErr) {
               console.log(
-                `Failed to create new upload session: ${sessionErr instanceof Error ? sessionErr.message : String(sessionErr)}`
+                `Failed to create new upload session: ${sessionErr instanceof Error ? sessionErr.message : String(sessionErr)}`,
               );
             }
           }
 
           console.log(`Error uploading chunk ${start}-${end}: ${msg}`);
           console.log(
-            `Retrying chunk upload (attempt ${retry + 1}/${params.maxRetries})...`
+            `Retrying chunk upload (attempt ${retry + 1}/${params.maxRetries})...`,
           );
           await sleep(params.retryDelay);
         } else {
           throw new Error(
-            `failed to upload chunk after ${params.maxRetries} retries: ${msg}`
+            `failed to upload chunk after ${params.maxRetries} retries: ${msg}`,
           );
         }
       }
@@ -84,7 +84,7 @@ export async function upload(
 
     if (!uploaded) {
       throw new Error(
-        `failed to upload chunk after ${params.maxRetries} retries: unknown error`
+        `failed to upload chunk after ${params.maxRetries} retries: unknown error`,
       );
     }
   }
@@ -94,7 +94,7 @@ export async function upload(
 
 export async function createUploadSession(
   client: AzureClient,
-  remoteFilePath: string
+  remoteFilePath: string,
 ): Promise<string> {
   const url = `https://graph.microsoft.com/v1.0/me/drive/root:/${remoteFilePath}:/createUploadSession`;
   const body = JSON.stringify({
@@ -113,7 +113,7 @@ export async function createUploadSession(
   if (resp.status !== 200) {
     const respBody = await resp.text();
     throw new Error(
-      `failed to create upload session, status: ${resp.status}, response: ${respBody}`
+      `failed to create upload session, status: ${resp.status}, response: ${respBody}`,
     );
   }
 
@@ -127,22 +127,22 @@ export async function uploadChunk(
   chunk: Uint8Array,
   start: bigint,
   end: bigint,
-  totalSize: bigint
+  totalSize: bigint,
 ): Promise<boolean> {
   if (start < 0n) {
     throw new Error(
-      `invalid chunk range: start=${start}, end=${end}, total=${totalSize}`
+      `invalid chunk range: start=${start}, end=${end}, total=${totalSize}`,
     );
   }
   if (end < start) {
     throw new Error(
-      `invalid chunk range: start=${start}, end=${end}, total=${totalSize}`
+      `invalid chunk range: start=${start}, end=${end}, total=${totalSize}`,
     );
   }
   const expectedSize = end - start + 1n;
   if (BigInt(chunk.length) !== expectedSize) {
     throw new Error(
-      `chunk size mismatch: got ${chunk.length} bytes, expected ${expectedSize} bytes`
+      `chunk size mismatch: got ${chunk.length} bytes, expected ${expectedSize} bytes`,
     );
   }
 
@@ -171,19 +171,21 @@ export async function uploadChunk(
         throw new Error("resourceModified: session expired");
       }
       throw new Error(
-        `conflict error: status ${resp.status}, response: ${body}`
+        `conflict error: status ${resp.status}, response: ${body}`,
       );
     }
     default: {
       const body = await resp.text();
-      throw new Error(`upload failed: status ${resp.status}, response: ${body}`);
+      throw new Error(
+        `upload failed: status ${resp.status}, response: ${body}`,
+      );
     }
   }
 }
 
 export async function getFileID(
   client: AzureClient,
-  remoteFilePath: string
+  remoteFilePath: string,
 ): Promise<string> {
   const url = `https://graph.microsoft.com/v1.0/me/drive/root:/${remoteFilePath}`;
 
@@ -194,7 +196,7 @@ export async function getFileID(
   if (resp.status !== 200) {
     const body = await resp.text();
     throw new Error(
-      `failed to fetch file metadata, status: ${resp.status}, response: ${body}`
+      `failed to fetch file metadata, status: ${resp.status}, response: ${body}`,
     );
   }
 

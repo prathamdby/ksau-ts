@@ -51,7 +51,7 @@ export function getAvailableRemotes(configs: Map<string, string>[]): string[] {
 
 export function getRemoteConfig(
   configs: Map<string, string>[],
-  remoteName: string
+  remoteName: string,
 ): Map<string, string> {
   const available = getAvailableRemotes(configs);
 

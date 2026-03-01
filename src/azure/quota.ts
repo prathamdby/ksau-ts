@@ -13,7 +13,7 @@ export async function getDriveQuota(client: AzureClient): Promise<DriveQuota> {
   if (resp.status !== 200) {
     const body = await resp.text();
     throw new Error(
-      `failed to fetch quota information, status: ${resp.status}, response: ${body}`
+      `failed to fetch quota information, status: ${resp.status}, response: ${body}`,
     );
   }
 

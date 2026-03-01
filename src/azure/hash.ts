@@ -2,7 +2,7 @@ import type { AzureClient } from "./client.ts";
 
 export async function getQuickXorHash(
   client: AzureClient,
-  fileId: string
+  fileId: string,
 ): Promise<string> {
   await client.ensureTokenValid();
 
@@ -15,7 +15,7 @@ export async function getQuickXorHash(
   if (resp.status !== 200) {
     const body = await resp.text();
     throw new Error(
-      `failed to fetch file metadata, status: ${resp.status}, response: ${body}`
+      `failed to fetch file metadata, status: ${resp.status}, response: ${body}`,
     );
   }
 

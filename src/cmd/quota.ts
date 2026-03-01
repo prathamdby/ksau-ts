@@ -1,45 +1,56 @@
-import { type Command } from 'commander'
-import { AzureClient } from '../azure/client.ts'
-import { parseRcloneConfigData, getAvailableRemotes } from '../azure/config.ts'
-import { displayQuotaInfo } from '../azure/quota.ts'
-import { getConfigData } from './utils.ts'
+import { type Command } from "commander";
+import { AzureClient } from "../azure/client.ts";
+import { parseRcloneConfigData, getAvailableRemotes } from "../azure/config.ts";
+import { displayQuotaInfo } from "../azure/quota.ts";
+import { getConfigData } from "./utils.ts";
 
 export function registerQuotaCommand(program: Command): void {
   program
-    .command('quota')
-    .description('Display OneDrive quota information')
+    .command("quota")
+    .description("Display OneDrive quota information")
     .action(async () => {
-      const configData = await getConfigData()
-      const rcloneConfigFile = parseRcloneConfigData(configData)
-      const availRemotes = getAvailableRemotes(rcloneConfigFile)
-      let exitCode = 0
+      const configData = await getConfigData();
+      const rcloneConfigFile = parseRcloneConfigData(configData);
+      const availRemotes = getAvailableRemotes(rcloneConfigFile);
+      let exitCode = 0;
 
       await Promise.all(
         availRemotes.map(async (remoteName) => {
-          let client: AzureClient
+          let client: AzureClient;
           try {
-            client = await AzureClient.fromRcloneConfigData(configData, remoteName)
+            client = await AzureClient.fromRcloneConfigData(
+              configData,
+              remoteName,
+            );
           } catch (e) {
-            console.log("Failed to initialize client for remote '" + remoteName + "': ", e)
-            exitCode = 1
-            return
+            console.log(
+              "Failed to initialize client for remote '" + remoteName + "': ",
+              e,
+            );
+            exitCode = 1;
+            return;
           }
 
-          let quota
+          let quota;
           try {
-            quota = await client.getDriveQuota()
+            quota = await client.getDriveQuota();
           } catch (e) {
-            console.log("Failed to fetch quota information for remote '" + remoteName + "': ", e)
-            exitCode = 1
-            return
+            console.log(
+              "Failed to fetch quota information for remote '" +
+                remoteName +
+                "': ",
+              e,
+            );
+            exitCode = 1;
+            return;
           }
 
-          displayQuotaInfo(remoteName, quota)
-        })
-      )
+          displayQuotaInfo(remoteName, quota);
+        }),
+      );
 
       if (exitCode !== 0) {
-        process.exit(1)
+        process.exit(1);
       }
-    })
+    });
 }

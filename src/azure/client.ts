@@ -26,7 +26,7 @@ export class AzureClient {
     driveId: string,
     driveType: string,
     remoteRootFolder: string,
-    remoteBaseUrl: string
+    remoteBaseUrl: string,
   ) {
     this.clientId = clientId;
     this.clientSecret = clientSecret;
@@ -41,7 +41,7 @@ export class AzureClient {
 
   static fromRcloneConfigData(
     data: Uint8Array,
-    remoteName: string
+    remoteName: string,
   ): AzureClient {
     const configMaps = parseRcloneConfigData(data);
 
@@ -77,7 +77,7 @@ export class AzureClient {
     const expiration = new Date(tokenData.expiry);
     if (isNaN(expiration.getTime())) {
       throw new Error(
-        `failed to parse token expiration time: invalid date ${tokenData.expiry}`
+        `failed to parse token expiration time: invalid date ${tokenData.expiry}`,
       );
     }
 
@@ -93,7 +93,7 @@ export class AzureClient {
       driveId,
       driveType,
       remoteRootFolder,
-      remoteBaseUrl
+      remoteBaseUrl,
     );
   }
 
@@ -130,9 +130,7 @@ export class AzureClient {
     });
 
     if (!res.ok) {
-      throw new Error(
-        `failed to refresh token, status code: ${res.status}`
-      );
+      throw new Error(`failed to refresh token, status code: ${res.status}`);
     }
 
     const responseData = (await res.json()) as {
@@ -143,9 +141,7 @@ export class AzureClient {
 
     this.accessToken = responseData.access_token;
     this.refreshToken = responseData.refresh_token;
-    this.expiration = new Date(
-      Date.now() + responseData.expires_in * 1000
-    );
+    this.expiration = new Date(Date.now() + responseData.expires_in * 1000);
   }
 
   getDriveQuota(): Promise<DriveQuota> {
