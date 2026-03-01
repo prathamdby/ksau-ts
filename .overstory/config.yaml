@@ -36,7 +36,7 @@ merge:
   aiResolveEnabled: true
   reimagineEnabled: false
 providers:
-  anthropic:
+  github-copilot:
     type: native
 watchdog:
   tier0Enabled: true
@@ -51,10 +51,10 @@ logging:
   verbose: false
   redactSecrets: true
 runtime:
-  default: claude
+  default: pi
   pi:
-    provider: anthropic
+    provider: github-copilot
     modelMap:
-      opus: anthropic/claude-opus-4-6
-      sonnet: anthropic/claude-sonnet-4-6
-      haiku: anthropic/claude-haiku-4-5
+      opus: github-copilot/claude-sonnet-4.6
+      sonnet: github-copilot/gpt-5.3-codex
+      haiku: github-copilot/claude-haiku-4.5
