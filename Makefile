@@ -5,9 +5,13 @@ COMMIT    := $(shell git rev-parse --short HEAD)
 DATE      := $(shell date -u +%Y-%m-%d)
 
 DEFINE_FLAGS := \
-	--define VERSION='"$(VERSION)"' \
-	--define COMMIT='"$(COMMIT)"' \
-	--define DATE='"$(DATE)"'
+	--define BUILD_VERSION='"$(VERSION)"' \
+	--define BUILD_COMMIT='"$(COMMIT)"' \
+	--define BUILD_DATE='"$(DATE)"'
+
+ASSET_FLAGS := \
+	--asset src/crypto/privkey.pem \
+	--asset src/crypto/passphrase.txt
 
 # Default target
 all: build
@@ -17,17 +21,19 @@ build:
 	@echo "Building $(APP_NAME)..."
 	bun build src/main.ts \
 		--compile \
+		--minify \
 		$(DEFINE_FLAGS) \
+		$(ASSET_FLAGS) \
 		--outfile $(APP_NAME)
 
 # Only to be used in GitHub Actions
 build_gh_actions:
 	@echo "notice: this is meant to be used in workflows"
-	bun build src/main.ts --compile $(DEFINE_FLAGS) --target bun-linux-x64    --outfile $(APP_NAME)-linux-x64
-	bun build src/main.ts --compile $(DEFINE_FLAGS) --target bun-linux-arm64  --outfile $(APP_NAME)-linux-arm64
-	bun build src/main.ts --compile $(DEFINE_FLAGS) --target bun-windows-x64  --outfile $(APP_NAME)-windows-x64.exe
-	bun build src/main.ts --compile $(DEFINE_FLAGS) --target bun-darwin-x64   --outfile $(APP_NAME)-darwin-x64
-	bun build src/main.ts --compile $(DEFINE_FLAGS) --target bun-darwin-arm64 --outfile $(APP_NAME)-darwin-arm64
+	bun build src/main.ts --compile --minify $(DEFINE_FLAGS) $(ASSET_FLAGS) --target bun-linux-x64    --outfile $(APP_NAME)-linux-x64
+	bun build src/main.ts --compile --minify $(DEFINE_FLAGS) $(ASSET_FLAGS) --target bun-linux-arm64  --outfile $(APP_NAME)-linux-arm64
+	bun build src/main.ts --compile --minify $(DEFINE_FLAGS) $(ASSET_FLAGS) --target bun-windows-x64  --outfile $(APP_NAME)-windows-x64.exe
+	bun build src/main.ts --compile --minify $(DEFINE_FLAGS) $(ASSET_FLAGS) --target bun-darwin-x64   --outfile $(APP_NAME)-darwin-x64
+	bun build src/main.ts --compile --minify $(DEFINE_FLAGS) $(ASSET_FLAGS) --target bun-darwin-arm64 --outfile $(APP_NAME)-darwin-arm64
 
 # Display version information
 version:
