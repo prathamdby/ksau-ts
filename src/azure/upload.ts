@@ -29,6 +29,7 @@ export async function upload(
 
     let uploaded = false;
     for (let retry = 0; retry < params.maxRetries; retry++) {
+      await client.ensureTokenValid();
       try {
         const success = await uploadChunk(
           client,
