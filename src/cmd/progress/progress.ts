@@ -7,6 +7,9 @@ export function validStyles(): ProgressStyle[] {
 }
 
 export function formatBytes(bytes: number): string {
+  if (!Number.isFinite(bytes) || bytes < 0) {
+    return "0.0 B";
+  }
   const unit = 1024;
   if (bytes < unit) {
     return `${bytes.toFixed(1)} B`;
@@ -65,7 +68,7 @@ export class ProgressTracker {
     const elapsed = (now.getTime() - this.lastUpdate.getTime()) / 1000;
 
     const chunkSize = uploadedSize - this.lastChunkSize;
-    const speed = Number(chunkSize) / elapsed;
+    const speed = elapsed > 0 ? Number(chunkSize) / elapsed : 0;
     if (elapsed >= 1.0) {
       this.speedSamples.push(speed);
       if (this.speedSamples.length > SPEED_WINDOW) {
@@ -81,7 +84,8 @@ export class ProgressTracker {
   }
 
   displayProgress(): void {
-    const percent = (Number(this.uploadedSize) * 100) / Number(this.totalSize);
+    const totalNum = Number(this.totalSize);
+    const percent = totalNum > 0 ? (Number(this.uploadedSize) * 100) / totalNum : 0;
     let progressBar: string;
 
     switch (this.style) {
