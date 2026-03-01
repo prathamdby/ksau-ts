@@ -21,7 +21,7 @@ export async function getDriveQuota(
     );
   }
 
-  const data = (await resp.json()) as {
+  const data = JSON.parse(await resp.text()) as {
     total: number;
     used: number;
     remaining: number;

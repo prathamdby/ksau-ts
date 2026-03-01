@@ -19,7 +19,7 @@ export async function getQuickXorHash(
     );
   }
 
-  const metadata = (await resp.json()) as {
+  const metadata = JSON.parse(await resp.text()) as {
     file?: { hashes?: { quickXorHash?: string } };
   };
 

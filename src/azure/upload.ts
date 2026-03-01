@@ -119,7 +119,7 @@ export async function createUploadSession(
     );
   }
 
-  const data = (await resp.json()) as { uploadUrl: string };
+  const data = JSON.parse(await resp.text()) as { uploadUrl: string };
   return data.uploadUrl;
 }
 
@@ -205,7 +205,7 @@ export async function getFileID(
     );
   }
 
-  const data = (await resp.json()) as { id: string };
+  const data = JSON.parse(await resp.text()) as { id: string };
   return data.id;
 }
 

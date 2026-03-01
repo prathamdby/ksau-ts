@@ -133,7 +133,7 @@ export class AzureClient {
       throw new Error(`failed to refresh token, status code: ${res.status}`);
     }
 
-    const responseData = (await res.json()) as {
+    const responseData = JSON.parse(await res.text()) as {
       access_token: string;
       refresh_token: string;
       expires_in: number;
