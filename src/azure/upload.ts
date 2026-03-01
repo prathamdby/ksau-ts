@@ -95,6 +95,8 @@ export async function createUploadSession(
   client: AzureClient,
   remoteFilePath: string,
 ): Promise<string> {
+  await client.ensureTokenValid();
+
   const url = `https://graph.microsoft.com/v1.0/me/drive/root:/${remoteFilePath}:/createUploadSession`;
   const body = JSON.stringify({
     item: { "@microsoft.graph.conflictBehavior": "replace" },
@@ -187,6 +189,8 @@ export async function getFileID(
   client: AzureClient,
   remoteFilePath: string,
 ): Promise<string> {
+  await client.ensureTokenValid();
+
   const url = `https://graph.microsoft.com/v1.0/me/drive/root:/${remoteFilePath}`;
 
   const resp = await fetch(url, {
