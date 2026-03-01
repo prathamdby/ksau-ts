@@ -2,7 +2,7 @@
   "name": "ksau-ts",
   "type": "module",
   "scripts": {
-    "build": "bun build src/main.ts --outfile ksau-ts-dev",
+    "build": "bun build src/main.ts --outfile ksau-ts-dev --target bun",
     "build:gh": "make build_gh_actions",
     "typecheck": "bunx tsc --noEmit"
   },
