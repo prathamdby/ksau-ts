@@ -163,6 +163,7 @@ export async function uploadChunk(
     case 200:
     case 201:
     case 202:
+      await resp.arrayBuffer();
       return true;
     case 416: {
       const body = await resp.text();
