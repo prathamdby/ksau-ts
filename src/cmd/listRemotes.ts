@@ -1,6 +1,6 @@
-import { type Command } from "commander";
+import type { Command } from "commander";
+import { getAvailableRemotes, parseRcloneConfigData } from "../azure/config.ts";
 import { getConfigData } from "./utils.ts";
-import { parseRcloneConfigData, getAvailableRemotes } from "../azure/config.ts";
 
 export function registerListRemotesCommand(program: Command): void {
   program
@@ -32,6 +32,6 @@ export function registerListRemotesCommand(program: Command): void {
       }
 
       const availableRemotes = getAvailableRemotes(parsedConfig);
-      console.log("available remotes: [" + availableRemotes.join(" ") + "]");
+      console.log(`available remotes: [${availableRemotes.join(" ")}]`);
     });
 }

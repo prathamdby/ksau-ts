@@ -1,8 +1,8 @@
 import { parseRcloneConfigData } from "./config.ts";
-import { getDriveQuota } from "./quota.ts";
-import { upload } from "./upload.ts";
 import { getQuickXorHash } from "./hash.ts";
+import { getDriveQuota } from "./quota.ts";
 import type { DriveQuota, UploadParams } from "./types.ts";
+import { upload } from "./upload.ts";
 
 export class AzureClient {
   clientId: string;
@@ -75,7 +75,7 @@ export class AzureClient {
       throw new Error("failed to parse token expiration time: missing expiry");
     }
     const expiration = new Date(tokenData.expiry);
-    if (isNaN(expiration.getTime())) {
+    if (Number.isNaN(expiration.getTime())) {
       throw new Error(
         `failed to parse token expiration time: invalid date ${tokenData.expiry}`,
       );

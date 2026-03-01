@@ -1,4 +1,4 @@
-import { type Command } from "commander";
+import type { Command } from "commander";
 
 export function registerHelpCommand(program: Command): void {
   program
@@ -34,7 +34,7 @@ export function registerHelpCommand(program: Command): void {
           "  --remote-config  Name of the remote configuration (default: oned)",
         );
       } else {
-        console.log("Help for '" + cmd + "' command:");
+        console.log(`Help for '${cmd}' command:`);
         switch (cmd) {
           case "upload":
             printUploadHelp();
@@ -52,7 +52,7 @@ export function registerHelpCommand(program: Command): void {
             printListRemoteHelp();
             break;
           default:
-            console.log("Unknown command: " + cmd);
+            console.log(`Unknown command: ${cmd}`);
         }
       }
     });

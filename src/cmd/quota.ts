@@ -1,7 +1,8 @@
-import { type Command } from "commander";
+import type { Command } from "commander";
 import { AzureClient } from "../azure/client.ts";
-import { parseRcloneConfigData, getAvailableRemotes } from "../azure/config.ts";
+import { getAvailableRemotes, parseRcloneConfigData } from "../azure/config.ts";
 import { displayQuotaInfo } from "../azure/quota.ts";
+import type { DriveQuota } from "../azure/types.ts";
 import { getConfigData } from "./utils.ts";
 
 export function registerQuotaCommand(program: Command): void {
@@ -30,14 +31,14 @@ export function registerQuotaCommand(program: Command): void {
             );
           } catch (e) {
             console.log(
-              "Failed to initialize client for remote '" + remoteName + "': ",
+              `Failed to initialize client for remote '${remoteName}': `,
               e,
             );
             exitCode = 1;
             return;
           }
 
-          let quota;
+          let quota: DriveQuota;
           try {
             quota = await client.getDriveQuota();
           } catch (e) {

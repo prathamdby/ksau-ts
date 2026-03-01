@@ -1,4 +1,4 @@
-import { type Command } from "commander";
+import type { Command } from "commander";
 
 declare const BUILD_VERSION: string;
 declare const BUILD_COMMIT: string;
@@ -37,8 +37,8 @@ export function registerVersionCommand(program: Command): void {
       const version = getVersion();
       const commit = getCommit();
       const date = getDate();
-      console.log("ksau-ts v" + version);
-      console.log("Commit: " + commit);
-      console.log("Built: " + date);
+      console.log(`ksau-ts v${version}`);
+      console.log(`Commit: ${commit}`);
+      console.log(`Built: ${date}`);
     });
 }
