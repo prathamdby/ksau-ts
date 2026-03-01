@@ -39,10 +39,10 @@ export class AzureClient {
     this.remoteBaseUrl = remoteBaseUrl;
   }
 
-  static fromRcloneConfigData(
+  static async fromRcloneConfigData(
     data: Uint8Array,
     remoteName: string,
-  ): AzureClient {
+  ): Promise<AzureClient> {
     const configMaps = parseRcloneConfigData(data);
 
     let configMap: Map<string, string> | undefined;
@@ -84,7 +84,7 @@ export class AzureClient {
     const driveId = configMap.get("drive_id") ?? "";
     const driveType = configMap.get("drive_type") ?? "";
 
-    return new AzureClient(
+    const client = new AzureClient(
       clientId,
       clientSecret,
       accessToken,
@@ -95,6 +95,8 @@ export class AzureClient {
       remoteRootFolder,
       remoteBaseUrl,
     );
+    await client.ensureTokenValid();
+    return client;
   }
 
   async ensureTokenValid(): Promise<void> {
