@@ -60,10 +60,8 @@ export function getRemoteConfig(
   }
 
   for (const elem of configs) {
-    for (const key of elem.keys()) {
-      if (key === remoteName) {
-        return elem;
-      }
+    if (elem.get("remote_name") === remoteName) {
+      return elem;
     }
   }
 
