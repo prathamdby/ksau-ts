@@ -85,14 +85,7 @@ export async function selectRemoteAutomatically(
           rcloneConfigData,
           remote,
         );
-        const quota = await Promise.race([
-          client.getDriveQuota(),
-          new Promise<never>((_, reject) =>
-            AbortSignal.timeout(10000).addEventListener("abort", () =>
-              reject(new Error("timeout")),
-            ),
-          ),
-        ]);
+        const quota = await client.getDriveQuota(AbortSignal.timeout(10000));
         remoteAndSpace.set(remote, quota.remaining);
       } catch {
         // ignore that remote

@@ -144,8 +144,8 @@ export class AzureClient {
     this.expiration = new Date(Date.now() + responseData.expires_in * 1000);
   }
 
-  getDriveQuota(): Promise<DriveQuota> {
-    return getDriveQuota(this);
+  getDriveQuota(signal?: AbortSignal): Promise<DriveQuota> {
+    return getDriveQuota(this, signal);
   }
 
   upload(params: UploadParams): Promise<string> {
