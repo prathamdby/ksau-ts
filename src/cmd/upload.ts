@@ -235,9 +235,13 @@ export function registerUploadCommand(program: Command): void {
         console.log("\nFile uploaded successfully.");
 
         const baseURL = client.remoteBaseUrl;
-        let urlPath = path.posix.join(remoteFolder, localFileName).replace(/ /g, "%20");
+        let urlPath = path.posix
+          .join(remoteFolder, localFileName)
+          .replace(/ /g, "%20");
         if (remoteFileName) {
-          urlPath = path.posix.join(remoteFolder, remoteFileName).replace(/ /g, "%20");
+          urlPath = path.posix
+            .join(remoteFolder, remoteFileName)
+            .replace(/ /g, "%20");
         }
         const downloadURL = baseURL + "/" + urlPath;
         console.log(

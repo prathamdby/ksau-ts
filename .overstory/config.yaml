@@ -47,9 +47,6 @@ watchdog:
   zombieThresholdMs: 600000
   nudgeIntervalMs: 60000
 models:
-  coordinator: opus
-  lead: sonnet
-  builder: haiku
 logging:
   verbose: false
   redactSecrets: true
