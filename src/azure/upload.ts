@@ -1,4 +1,3 @@
-import { readFileSync } from "node:fs";
 import type { AzureClient } from "./client.ts";
 import type { UploadParams } from "./types.ts";
 
@@ -13,8 +12,8 @@ export async function upload(
   let uploadURL = await createUploadSession(client, params.remoteFilePath);
   console.log("Upload session created successfully.");
 
-  const fileBytes = readFileSync(params.filePath);
-  const fileSize = BigInt(fileBytes.length);
+  const file = Bun.file(params.filePath);
+  const fileSize = BigInt(file.size);
   console.log(`File size: ${fileSize} bytes`);
 
   const chunkSize = params.chunkSize;
@@ -26,7 +25,7 @@ export async function upload(
       end = fileSize - 1n;
     }
 
-    const chunk = fileBytes.subarray(Number(start), Number(end) + 1);
+    const chunk = file.slice(Number(start), Number(end) + 1);
 
     let uploaded = false;
     for (let retry = 0; retry < params.maxRetries; retry++) {
@@ -124,7 +123,7 @@ export async function createUploadSession(
 export async function uploadChunk(
   _client: AzureClient,
   uploadUrl: string,
-  chunk: Uint8Array,
+  chunk: Uint8Array | Blob,
   start: bigint,
   end: bigint,
   totalSize: bigint,
@@ -140,9 +139,10 @@ export async function uploadChunk(
     );
   }
   const expectedSize = end - start + 1n;
-  if (BigInt(chunk.length) !== expectedSize) {
+  const chunkSize = chunk instanceof Uint8Array ? chunk.length : chunk.size;
+  if (BigInt(chunkSize) !== expectedSize) {
     throw new Error(
-      `chunk size mismatch: got ${chunk.length} bytes, expected ${expectedSize} bytes`,
+      `chunk size mismatch: got ${chunkSize} bytes, expected ${expectedSize} bytes`,
     );
   }
 
@@ -153,7 +153,7 @@ export async function uploadChunk(
       "Content-Length": String(expectedSize),
       "Content-Type": "application/octet-stream",
     },
-    body: chunk.buffer as ArrayBuffer,
+    body: chunk instanceof Uint8Array ? (chunk.buffer as ArrayBuffer) : chunk,
   });
 
   switch (resp.status) {
