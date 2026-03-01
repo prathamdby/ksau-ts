@@ -159,9 +159,9 @@ export function registerUploadCommand(program: Command): void {
       }
 
       const localFileName = path.basename(filePath);
-      let remoteFilePath = path.join(remoteFolder, localFileName);
+      let remoteFilePath = path.posix.join(remoteFolder, localFileName);
       if (remoteFileName) {
-        remoteFilePath = path.join(remoteFolder, remoteFileName);
+        remoteFilePath = path.posix.join(remoteFolder, remoteFileName);
       }
 
       let configData: Uint8Array;
@@ -184,7 +184,7 @@ export function registerUploadCommand(program: Command): void {
       }
 
       const rootFolder = client.remoteRootFolder;
-      const fullRemotePath = path.join(rootFolder, remoteFilePath);
+      const fullRemotePath = path.posix.join(rootFolder, remoteFilePath);
       console.log("Full remote path: " + fullRemotePath);
 
       let tracker: ProgressTracker | null = new ProgressTracker(
@@ -235,15 +235,9 @@ export function registerUploadCommand(program: Command): void {
         console.log("\nFile uploaded successfully.");
 
         const baseURL = client.remoteBaseUrl;
-        let urlPath = path
-          .join(remoteFolder, localFileName)
-          .replace(/\\/g, "/")
-          .replace(/ /g, "%20");
+        let urlPath = path.posix.join(remoteFolder, localFileName).replace(/ /g, "%20");
         if (remoteFileName) {
-          urlPath = path
-            .join(remoteFolder, remoteFileName)
-            .replace(/\\/g, "/")
-            .replace(/ /g, "%20");
+          urlPath = path.posix.join(remoteFolder, remoteFileName).replace(/ /g, "%20");
         }
         const downloadURL = baseURL + "/" + urlPath;
         console.log(
