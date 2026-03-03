@@ -36,15 +36,16 @@ export function registerHelpCommand(program: Command): void {
           case "refresh":
             note(refreshHelp, "refresh");
             break;
-          case "list-remote":
-            note(listRemoteHelp, "list-remote");
+          case "list-remotes":
+            note(listRemoteHelp, "list-remotes");
             break;
           default:
             log.error(`Unknown command: ${cmd}`);
+            process.exit(1);
         }
       }
 
-      outro("");
+      outro("Done");
     });
 }
 

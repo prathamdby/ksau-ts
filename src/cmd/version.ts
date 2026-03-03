@@ -41,6 +41,6 @@ export function registerVersionCommand(program: Command): void {
       intro(`ksau-ts v${version}`);
       log.info(`Commit  ${commit}`);
       log.info(`Built   ${date}`);
-      outro("");
+      outro("Done");
     });
 }
