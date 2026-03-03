@@ -3,7 +3,7 @@ import type { Command } from "commander";
 import { AzureClient } from "../azure/client.ts";
 import { getAvailableRemotes, parseRcloneConfigData } from "../azure/config.ts";
 import type { DriveQuota } from "../azure/types.ts";
-import { formatBytesHuman } from "./tui.ts";
+import { fmtError, formatBytesHuman } from "./tui.ts";
 import { getConfigData } from "./utils.ts";
 
 type QuotaResult =
@@ -75,7 +75,7 @@ export function registerQuotaCommand(program: Command): void {
               `  Trashed: ${formatBytesHuman(result.quota.deleted)}`,
           );
         } else {
-          log.error(`Failed: ${result.remote} — ${result.message}`);
+          log.error(`Failed: ${result.remote} — ${fmtError(result.message)}`);
           exitCode = 1;
         }
       }

@@ -55,6 +55,19 @@ export function fmtPath(p: string): string {
   return p.replace(homedir(), "~");
 }
 
+export function fmtError(err: unknown, maxLen = 60): string {
+  if (typeof err === "string") {
+    return err.length > maxLen ? `${err.slice(0, maxLen)}...` : err;
+  }
+  const msg = err instanceof Error ? err.message : String(err);
+  if (msg.includes("status: 429")) return "Rate limited (429)";
+  if (msg.includes("status: 401")) return "Unauthorized (401)";
+  if (msg.includes("status: 403")) return "Access denied (403)";
+  const statusMatch = msg.match(/status(?:\s+code)?:\s+(\d{3})/);
+  if (statusMatch) return `Request failed (${statusMatch[1]})`;
+  return msg.length > maxLen ? `${msg.slice(0, maxLen)}...` : msg;
+}
+
 export class SpeedTracker {
   private speedSamples: number[] = [];
   private lastCalcMs: number;
