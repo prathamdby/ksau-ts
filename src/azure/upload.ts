@@ -5,16 +5,16 @@ export async function upload(
   client: AzureClient,
   params: UploadParams,
 ): Promise<string> {
-  console.log("Starting file upload with upload session...");
+  params.logger?.info("Starting file upload with upload session...");
 
   await client.ensureTokenValid();
 
   let uploadURL = await createUploadSession(client, params.remoteFilePath);
-  console.log("Upload session created successfully.");
+  params.logger?.info("Upload session created successfully.");
 
   const file = Bun.file(params.filePath);
   const fileSize = BigInt(file.size);
-  console.log(`File size: ${fileSize} bytes`);
+  params.logger?.info(`File size: ${fileSize} bytes`);
 
   const chunkSize = params.chunkSize;
   let totalUploaded = 0n;
@@ -61,16 +61,16 @@ export async function upload(
                 params.remoteFilePath,
               );
               uploadURL = newURL;
-              console.log("Created new upload session after error");
+              params.logger?.warn("Created new upload session after error");
             } catch (sessionErr) {
-              console.log(
+              params.logger?.warn(
                 `Failed to create new upload session: ${sessionErr instanceof Error ? sessionErr.message : String(sessionErr)}`,
               );
             }
           }
 
-          console.log(`Error uploading chunk ${start}-${end}: ${msg}`);
-          console.log(
+          params.logger?.warn(`Error uploading chunk ${start}-${end}: ${msg}`);
+          params.logger?.warn(
             `Retrying chunk upload (attempt ${retry + 1}/${params.maxRetries})...`,
           );
           await sleep(params.retryDelay);

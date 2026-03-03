@@ -85,7 +85,8 @@ export class ProgressTracker {
 
   displayProgress(): void {
     const totalNum = Number(this.totalSize);
-    const percent = totalNum > 0 ? (Number(this.uploadedSize) * 100) / totalNum : 0;
+    const percent =
+      totalNum > 0 ? (Number(this.uploadedSize) * 100) / totalNum : 0;
     let progressBar: string;
 
     switch (this.style) {
