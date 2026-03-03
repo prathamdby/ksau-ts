@@ -1,9 +1,20 @@
 name: Build, Tag, and Release Application
 
+# Required GitHub secrets:
+#   PRIVATE_GPG_KEY          — raw PEM content of the OpenPGP private key
+#   PRIVATE_PGP_KEY_PASSPHRASE — passphrase for the key above
+
 on:
   push:
     tags:
-      - "v*.*.*-*"
+      - "v*.*.*"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release
+  cancel-in-progress: false
 
 jobs:
   build_and_release:
@@ -11,124 +22,67 @@ jobs:
 
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Set up Bun
         uses: oven-sh/setup-bun@v2
         with:
-          bun-version: latest
+          bun-version: "1.3.10"
 
       - name: Install Dependencies
         run: bun install
 
-      - name: Get Version from Makefile
-        id: get_version
+      - name: Set build metadata
         run: |
-          VERSION=$(make -s version | grep 'Version:' | awk '{print $2}')
-          echo "VERSION=${VERSION}" >> $GITHUB_ENV
-          echo "COMMIT=$(git rev-parse --short HEAD)" >> $GITHUB_ENV
-          echo "DATE=$(date -u +%Y-%m-%d)" >> $GITHUB_ENV
+          TAG="${{ github.ref_name }}"
+          VERSION="${TAG#v}"
+          echo "VERSION=${VERSION}" >> "$GITHUB_ENV"
+          echo "COMMIT=$(git rev-parse --short HEAD)" >> "$GITHUB_ENV"
+          echo "DATE=$(date -u +%Y-%m-%d)" >> "$GITHUB_ENV"
 
       - name: Build for GitHub Actions
         env:
-          PRIVATE_GPG_KEY_GIST_URL: ${{ secrets.PRIVATE_GPG_KEY_GIST_URL }}
+          PRIVATE_GPG_KEY: ${{ secrets.PRIVATE_GPG_KEY }}
           PRIVATE_PGP_KEY_PASSPHRASE: ${{ secrets.PRIVATE_PGP_KEY_PASSPHRASE }}
           VERSION: ${{ env.VERSION }}
           COMMIT: ${{ env.COMMIT }}
           DATE: ${{ env.DATE }}
         run: |
           set -e
-          if [ -z "$PRIVATE_GPG_KEY_GIST_URL" ]; then
-            echo "Error: PRIVATE_GPG_KEY_GIST_URL is empty or not set."
+          if [ -z "$PRIVATE_GPG_KEY" ]; then
+            echo "Error: PRIVATE_GPG_KEY is empty or not set."
             exit 1
           fi
           if [ -z "$PRIVATE_PGP_KEY_PASSPHRASE" ]; then
             echo "Error: PRIVATE_PGP_KEY_PASSPHRASE is empty or not set."
             exit 1
           fi
-          curl -s "$PRIVATE_GPG_KEY_GIST_URL" -o src/crypto/privkey.pem
-          if [ ! -s src/crypto/privkey.pem ]; then
-            echo "Error: Failed to download the private GPG key from the Gist."
-            exit 1
-          fi
-          echo "$PRIVATE_PGP_KEY_PASSPHRASE" > src/crypto/passphrase.txt
-          tr -d '\n' < src/crypto/passphrase.txt > tmp
-          mv tmp src/crypto/passphrase.txt
+
+          echo "$PRIVATE_GPG_KEY" > src/crypto/privkey.pem
+          printf '%s' "$PRIVATE_PGP_KEY_PASSPHRASE" > src/crypto/passphrase.txt
 
           make build_gh_actions
 
           rm -f src/crypto/privkey.pem src/crypto/passphrase.txt
 
-      - name: Create or Update Git Tag
-        id: create_tag
-        uses: rickstaa/action-create-tag@v1.7.2
-        with:
-          tag: ${{ env.VERSION }}
-          message: "Release ${{ env.VERSION }}"
-          force_push_tag: true
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Verify build outputs
+        run: |
+          for f in ksau-ts-linux-x64 ksau-ts-linux-arm64 ksau-ts-windows-x64.exe ksau-ts-darwin-x64 ksau-ts-darwin-arm64; do
+            test -f "$f" && test -s "$f" || { echo "Missing or empty: $f"; exit 1; }
+          done
 
-      - name: Create GitHub Release
-        id: create_release
-        uses: softprops/action-gh-release@v1
+      - name: Create release and upload assets
+        uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ env.VERSION }}
+          tag_name: ${{ github.ref_name }}
           name: Release ${{ env.VERSION }}
           body: |
-            A new release of the application is now available.
-            - Version: ${{ env.VERSION }}
-          draft: false
-          prerelease: ${{ secrets.PRE_RELEASE == 'true' }}
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Upload Linux x64 Release Asset
-        uses: actions/upload-release-asset@v1
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./ksau-ts-linux-x64
-          asset_name: ksau-ts-linux-x64
-          asset_content_type: application/octet-stream
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Upload Linux ARM64 Release Asset
-        uses: actions/upload-release-asset@v1
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./ksau-ts-linux-arm64
-          asset_name: ksau-ts-linux-arm64
-          asset_content_type: application/octet-stream
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Upload Windows x64 Release Asset
-        uses: actions/upload-release-asset@v1
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./ksau-ts-windows-x64.exe
-          asset_name: ksau-ts-windows-x64.exe
-          asset_content_type: application/octet-stream
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Upload Darwin x64 Release Asset
-        uses: actions/upload-release-asset@v1
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./ksau-ts-darwin-x64
-          asset_name: ksau-ts-darwin-x64
-          asset_content_type: application/octet-stream
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Upload Darwin ARM64 Release Asset
-        uses: actions/upload-release-asset@v1
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./ksau-ts-darwin-arm64
-          asset_name: ksau-ts-darwin-arm64
-          asset_content_type: application/octet-stream
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+            Release ${{ env.VERSION }} (commit ${{ env.COMMIT }}, built ${{ env.DATE }})
+          prerelease: ${{ contains(github.ref_name, '-') }}
+          make_latest: ${{ !contains(github.ref_name, '-') }}
+          files: |
+            ksau-ts-linux-x64
+            ksau-ts-linux-arm64
+            ksau-ts-windows-x64.exe
+            ksau-ts-darwin-x64
+            ksau-ts-darwin-arm64
