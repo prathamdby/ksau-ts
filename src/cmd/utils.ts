@@ -12,11 +12,6 @@ import { QuickXorHash } from "../crypto/quickxorhash.ts";
 const hashRetries = 5;
 const hashRetryDelay = 10000;
 
-export const ColorReset = "\x1b[0m";
-export const ColorRed = "\x1b[31m";
-export const ColorGreen = "\x1b[32m";
-export const ColorYellow = "\x1b[33m";
-
 export function getConfigPath(): string {
   const platform = process.platform;
   let configDir: string;
