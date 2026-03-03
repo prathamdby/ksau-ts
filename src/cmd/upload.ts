@@ -1,16 +1,6 @@
 import { statSync } from "node:fs";
 import path from "node:path";
-import {
-  box,
-  cancel,
-  intro,
-  isCancel,
-  log,
-  outro,
-  progress,
-  select,
-  spinner,
-} from "@clack/prompts";
+import { box, cancel, intro, log, outro, progress } from "@clack/prompts";
 import type { Command } from "commander";
 import { AzureClient } from "../azure/client.ts";
 import { KibiByte } from "../azure/constants.ts";
@@ -94,74 +84,24 @@ export function registerUploadCommand(program: Command): void {
       let remoteConfig: string = parentOpts.remoteConfig || "";
 
       if (!remoteConfig) {
-        if (!process.stdout.isTTY) {
-          // Non-interactive: auto-select remote with most free space
-          try {
-            const quotas = await fetchRemoteQuotas();
-            if (quotas.size === 0) {
-              cancel(
-                "cannot automatically determine remote to be used: all remotes unavailable",
-              );
-              process.exit(1);
-            }
-            const [selected] = [...quotas.entries()].sort((a, b) =>
-              b[1] > a[1] ? 1 : -1,
-            );
-            remoteConfig = selected[0];
-            log.info(
-              `Non-interactive mode — using remote with most free space: ${remoteConfig}`,
-            );
-          } catch (err) {
-            cancel(
-              `cannot automatically determine remote to be used: ${(err as Error).message}`,
-            );
-            process.exit(1);
-          }
-        } else {
-          // Interactive: fetch quotas in parallel, then present select prompt
-          const s = spinner();
-          s.start("Checking remotes...");
-
-          let quotas: Map<string, bigint>;
-          try {
-            quotas = await fetchRemoteQuotas();
-          } catch (err) {
-            s.stop();
-            cancel(`Failed to fetch remote quotas: ${(err as Error).message}`);
-            process.exit(1);
-          }
-          s.stop();
-
+        try {
+          const quotas = await fetchRemoteQuotas();
           if (quotas.size === 0) {
-            cancel("No remotes available");
+            cancel(
+              "cannot automatically determine remote to be used: all remotes unavailable",
+            );
             process.exit(1);
           }
-
-          if (quotas.size === 1) {
-            const [onlyRemote] = quotas.keys();
-            remoteConfig = onlyRemote;
-            log.step(`Using remote: ${onlyRemote} (only available)`);
-          } else {
-            // Sort descending by free space (most free first)
-            const sorted = [...quotas.entries()].sort((a, b) =>
-              b[1] > a[1] ? 1 : -1,
-            );
-            const result = await select({
-              message: "Select a remote",
-              options: sorted.map(([name, space]) => ({
-                value: name,
-                label: name,
-                hint: `${formatBytesHuman(space)} free`,
-              })),
-            });
-
-            if (isCancel(result)) {
-              cancel("Cancelled");
-              process.exit(0);
-            }
-
-            remoteConfig = result as string;
-          }
+          const [selected] = [...quotas.entries()].sort((a, b) =>
+            b[1] > a[1] ? 1 : -1,
+          );
+          remoteConfig = selected[0];
+          log.info(`Using remote: ${remoteConfig} (most free space)`);
+        } catch (err) {
+          cancel(
+            `cannot automatically determine remote to be used: ${(err as Error).message}`,
+          );
+          process.exit(1);
         }
       }
 
