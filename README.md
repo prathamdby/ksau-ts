@@ -1,12 +1,6 @@
 # ksau-ts
 
-TypeScript + Bun rewrite of [ksau-go](https://github.com/global-index-source/ksau-go). Faithful 1:1
-port — same commands, same flags, same output, same behavior.
-
-## Requirements
-
-- [Bun](https://bun.sh) ≥ 1.0
-- A valid rclone config at the platform-specific path (see [Configuration](#configuration))
+📡 a public file broadcaster — upload files to OneDrive and instantly share them.
 
 ## Installation
 
@@ -50,8 +44,6 @@ Optional:
       --skip-hash                 Skip QuickXorHash verification
       --hash-retries <n>          Max hash fetch retries (default: 5)
       --hash-retry-delay <ms>     Delay between hash retries in ms (default: 10000)
-      --progress <style>          Progress style: basic|blocks|modern|emoji|minimal (default: modern)
-      --emoji <emoji>             Custom emoji for emoji style (default: 🟦)
 ```
 
 Examples:
@@ -118,10 +110,10 @@ ksau-ts help quota
 
 The tool reads an encrypted rclone config file from:
 
-| Platform | Path                                |
-| -------- | ----------------------------------- |
-| Linux / macOS / Android | `~/.ksau/.conf/rclone.conf` |
-| Windows  | `%APPDATA%\ksau\.conf\rclone.conf`  |
+| Platform                | Path                               |
+| ----------------------- | ---------------------------------- |
+| Linux / macOS / Android | `~/.ksau/.conf/rclone.conf`        |
+| Windows                 | `%APPDATA%\ksau\.conf\rclone.conf` |
 
 Use `ksau-ts refresh` to download the config.
 
@@ -152,12 +144,9 @@ bun run typecheck  # TypeScript type check
 
 ## Release
 
-Releases are triggered by pushing a `v*.*.*-*` tag. The GitHub Actions workflow builds all 5
-platform binaries and uploads them to the release.
+Releases are triggered by pushing a `v*.*.*` tag.
 
 ```sh
-# Update VERSION file, then:
-git commit -m "chore: release vX.Y.Z"
-git tag vX.Y.Z-r1
-git push origin vX.Y.Z-r1
+git tag vX.Y.Z
+git push origin vX.Y.Z
 ```
