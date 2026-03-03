@@ -1,5 +1,7 @@
 import fs from "node:fs";
+import { cancel, intro, log, outro, spinner } from "@clack/prompts";
 import type { Command } from "commander";
+import { fmtPath } from "./tui.ts";
 import { getConfigPath } from "./utils.ts";
 
 const DEFAULT_URL =
@@ -11,15 +13,21 @@ export function registerRefreshCommand(program: Command): void {
     .description("Refresh rclone config file")
     .option("-u, --url <url>", "Sets a custom url (must be direct.)")
     .action(async (opts) => {
+      intro("ksau-ts refresh");
       const targetUrl: string = opts.url || DEFAULT_URL;
-
-      console.log("fetching rclone config from", targetUrl);
+      const s = spinner();
+      s.start(
+        opts.url
+          ? `Fetching config from ${targetUrl}...`
+          : "Fetching config...",
+      );
 
       let resp: Response;
       try {
         resp = await fetch(targetUrl);
       } catch (err) {
-        console.log("failed to fetch config file:", (err as Error).message);
+        s.stop();
+        cancel(`Failed to fetch config: ${(err as Error).message}`);
         process.exit(1);
       }
 
@@ -27,15 +35,15 @@ export function registerRefreshCommand(program: Command): void {
       try {
         body = new Uint8Array(await resp.arrayBuffer());
       } catch (err) {
-        console.log(
-          "something is wrong with the response:",
-          (err as Error).message,
-        );
+        s.stop();
+        cancel(`Bad response: ${(err as Error).message}`);
         process.exit(1);
       }
 
-      const userConfigFilePath = getConfigPath();
-      console.log("writing config file to", userConfigFilePath);
-      fs.writeFileSync(userConfigFilePath, body);
+      s.stop("Config fetched");
+      const configPath = getConfigPath();
+      fs.writeFileSync(configPath, body);
+      log.info(`Saved to ${fmtPath(configPath)}`);
+      outro("Done");
     });
 }

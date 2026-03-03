@@ -1,3 +1,4 @@
+import { intro, log, outro } from "@clack/prompts";
 import type { Command } from "commander";
 
 declare const BUILD_VERSION: string;
@@ -37,8 +38,9 @@ export function registerVersionCommand(program: Command): void {
       const version = getVersion();
       const commit = getCommit();
       const date = getDate();
-      console.log(`ksau-ts v${version}`);
-      console.log(`Commit: ${commit}`);
-      console.log(`Built: ${date}`);
+      intro(`ksau-ts v${version}`);
+      log.info(`Commit  ${commit}`);
+      log.info(`Built   ${date}`);
+      outro("");
     });
 }

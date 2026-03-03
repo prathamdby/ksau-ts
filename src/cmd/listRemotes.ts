@@ -1,3 +1,4 @@
+import { cancel, intro, log, outro } from "@clack/prompts";
 import type { Command } from "commander";
 import { getAvailableRemotes, parseRcloneConfigData } from "../azure/config.ts";
 import { getConfigData } from "./utils.ts";
@@ -7,16 +8,13 @@ export function registerListRemotesCommand(program: Command): void {
     .command("list-remotes")
     .description("List available remotes from the configuration file.")
     .action(async () => {
-      console.log("reading configuration file...");
+      intro("ksau-ts list-remotes");
 
       let configData: Uint8Array;
       try {
         configData = await getConfigData();
       } catch (err) {
-        console.log(
-          "failed to get configuration file data:",
-          (err as Error).message,
-        );
+        cancel(`Failed to read config: ${(err as Error).message}`);
         process.exit(1);
       }
 
@@ -24,14 +22,14 @@ export function registerListRemotesCommand(program: Command): void {
       try {
         parsedConfig = parseRcloneConfigData(configData);
       } catch (err) {
-        console.log(
-          "failed to parse configuration file data:",
-          (err as Error).message,
-        );
+        cancel(`Failed to parse config: ${(err as Error).message}`);
         process.exit(1);
       }
 
       const availableRemotes = getAvailableRemotes(parsedConfig);
-      console.log(`available remotes: [${availableRemotes.join(" ")}]`);
+      for (const remote of availableRemotes) {
+        log.step(remote);
+      }
+      outro(`${availableRemotes.length} remotes found`);
     });
 }
