@@ -56,10 +56,12 @@ export function fmtPath(p: string): string {
 }
 
 export function fmtError(err: unknown, maxLen = 60): string {
-  if (typeof err === "string") {
-    return err.length > maxLen ? `${err.slice(0, maxLen)}...` : err;
-  }
-  const msg = err instanceof Error ? err.message : String(err);
+  const msg =
+    typeof err === "string"
+      ? err
+      : err instanceof Error
+        ? err.message
+        : String(err);
   if (msg.includes("status: 429")) return "Rate limited (429)";
   if (msg.includes("status: 401")) return "Unauthorized (401)";
   if (msg.includes("status: 403")) return "Access denied (403)";
