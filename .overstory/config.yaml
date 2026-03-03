@@ -56,5 +56,5 @@ runtime:
     provider: github-copilot
     modelMap:
       opus: github-copilot/claude-sonnet-4.6
-      sonnet: github-copilot/gpt-5.3-codex
-      haiku: github-copilot/claude-haiku-4.5
+      sonnet: github-copilot/claude-sonnet-4.6
+      haiku: github-copilot/claude-sonnet-4.6

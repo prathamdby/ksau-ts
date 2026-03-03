@@ -21,9 +21,9 @@
 			"ksau-ts-f63c",
 			"ksau-ts-fa84"
 		],
-		"status": "active",
+		"status": "completed",
 		"createdAt": "2026-03-01T15:56:42.462Z",
-		"completedAt": null
+		"completedAt": "2026-03-03T18:03:03.100Z"
 	},
 	{
 		"id": "group-39999165",
@@ -38,9 +38,9 @@
 			"ksau-ts-1e17",
 			"ksau-ts-cfd2"
 		],
-		"status": "active",
+		"status": "completed",
 		"createdAt": "2026-03-01T16:32:50.485Z",
-		"completedAt": null
+		"completedAt": "2026-03-03T18:04:36.363Z"
 	},
 	{
 		"id": "group-90fa68a3",
@@ -51,8 +51,39 @@
 			"ksau-ts-9ae2",
 			"ksau-ts-8669"
 		],
-		"status": "active",
+		"status": "completed",
 		"createdAt": "2026-03-01T17:05:13.211Z",
+		"completedAt": "2026-03-03T18:04:36.734Z"
+	},
+	{
+		"id": "group-73835640",
+		"name": "tui-overhaul-batch1",
+		"memberIssueIds": [
+			"ksau-ts-7932"
+		],
+		"status": "active",
+		"createdAt": "2026-03-03T18:07:38.159Z",
+		"completedAt": null
+	},
+	{
+		"id": "group-f1b28bf4",
+		"name": "tui-overhaul-batch2",
+		"memberIssueIds": [
+			"ksau-ts-0e19",
+			"ksau-ts-71ef"
+		],
+		"status": "active",
+		"createdAt": "2026-03-03T18:07:38.389Z",
+		"completedAt": null
+	},
+	{
+		"id": "group-e8e3e3dc",
+		"name": "tui-overhaul-batch3",
+		"memberIssueIds": [
+			"ksau-ts-55bd"
+		],
+		"status": "active",
+		"createdAt": "2026-03-03T18:07:38.567Z",
 		"completedAt": null
 	}
 ]
