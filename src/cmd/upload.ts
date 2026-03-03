@@ -25,7 +25,6 @@ import {
   fetchRemoteQuotas,
   getChunkSize,
   getConfigData,
-  selectRemoteAutomatically,
   verifyFileIntegrity,
 } from "./utils.ts";
 
@@ -98,7 +97,17 @@ export function registerUploadCommand(program: Command): void {
         if (!process.stdout.isTTY) {
           // Non-interactive: auto-select remote with most free space
           try {
-            remoteConfig = await selectRemoteAutomatically(fileSize);
+            const quotas = await fetchRemoteQuotas();
+            if (quotas.size === 0) {
+              cancel(
+                "cannot automatically determine remote to be used: all remotes unavailable",
+              );
+              process.exit(1);
+            }
+            const [selected] = [...quotas.entries()].sort((a, b) =>
+              b[1] > a[1] ? 1 : -1,
+            );
+            remoteConfig = selected[0];
             log.info(
               `Non-interactive mode — using remote with most free space: ${remoteConfig}`,
             );

@@ -81,29 +81,6 @@ export async function fetchRemoteQuotas(): Promise<Map<string, bigint>> {
   return remoteAndSpace;
 }
 
-export async function selectRemoteAutomatically(
-  _fileSize: bigint,
-): Promise<string> {
-  const quotas = await fetchRemoteQuotas();
-
-  if (quotas.size === 0) {
-    throw new Error(
-      "cannot get remote with the most free space: all remote were not available",
-    );
-  }
-
-  let selectedRemote = "";
-  let maxSpace = -1n;
-  for (const [remote, space] of quotas) {
-    if (space > maxSpace) {
-      maxSpace = space;
-      selectedRemote = remote;
-    }
-  }
-
-  return selectedRemote;
-}
-
 export async function verifyFileIntegrity(
   filePath: string,
   fileId: string,

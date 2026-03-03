@@ -1,5 +1,4 @@
 import { homedir } from "node:os";
-import pc from "picocolors";
 
 const SPEED_WINDOW = 5;
 
@@ -90,5 +89,3 @@ export class SpeedTracker {
     );
   }
 }
-
-export const { dim, green, red, yellow, cyan, bold, gray } = pc;
