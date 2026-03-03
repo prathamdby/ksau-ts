@@ -85,5 +85,26 @@
 		"status": "active",
 		"createdAt": "2026-03-03T18:07:38.567Z",
 		"completedAt": null
+	},
+	{
+		"id": "group-79b63692",
+		"name": "upload-bugfix",
+		"memberIssueIds": [
+			"ksau-ts-9394"
+		],
+		"status": "active",
+		"createdAt": "2026-03-03T19:28:28.469Z",
+		"completedAt": null
+	},
+	{
+		"id": "group-5a730b52",
+		"name": "error-handling-fixes",
+		"memberIssueIds": [
+			"ksau-ts-59d4",
+			"ksau-ts-a771"
+		],
+		"status": "active",
+		"createdAt": "2026-03-03T19:54:32.119Z",
+		"completedAt": null
 	}
 ]
