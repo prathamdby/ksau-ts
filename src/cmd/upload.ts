@@ -255,7 +255,7 @@ export function registerUploadCommand(program: Command): void {
         retryDelay,
         accessToken: client.accessToken,
         progressCallback,
-        logger: { info: (m) => log.info(m), warn: (m) => log.warn(m) },
+        logger: { info: (_m) => {}, warn: (m) => log.warn(m) },
       };
 
       let fileID: string;
@@ -281,7 +281,13 @@ export function registerUploadCommand(program: Command): void {
             .replace(/ /g, "%20");
         }
         const downloadURL = `${baseURL}/${urlPath}`;
-        box(downloadURL, "Download URL");
+        if (baseURL) {
+          box(downloadURL, "Download URL");
+        } else {
+          log.info(
+            "File uploaded successfully. (base_url not configured — no download URL available)",
+          );
+        }
 
         if (!skipHash) {
           await verifyFileIntegrity(
