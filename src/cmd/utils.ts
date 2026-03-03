@@ -2,12 +2,12 @@ import fs from "node:fs";
 import { readFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
+import { log, spinner } from "@clack/prompts";
 import { AzureClient } from "../azure/client.ts";
 import { getAvailableRemotes, parseRcloneConfigData } from "../azure/config.ts";
 import { KibiByte } from "../azure/constants.ts";
 import { decrypt } from "../crypto/algo.ts";
 import { QuickXorHash } from "../crypto/quickxorhash.ts";
-import { type ProgressStyle, ProgressTracker } from "./progress/progress.ts";
 
 const hashRetries = 5;
 const hashRetryDelay = 10000;
@@ -61,21 +61,11 @@ export function getChunkSize(fileSize: bigint): bigint {
   }
 }
 
-export async function selectRemoteAutomatically(
-  _fileSize: bigint,
-  progressStyle: ProgressStyle,
-): Promise<string> {
+export async function fetchRemoteQuotas(): Promise<Map<string, bigint>> {
   const rcloneConfigData = await getConfigData();
   const parsedRcloneConfigData = parseRcloneConfigData(rcloneConfigData);
   const availRemotes = getAvailableRemotes(parsedRcloneConfigData);
 
-  process.stdout.write("Checking free spaces for each remote...");
-  const tracker = new ProgressTracker(
-    BigInt(availRemotes.length),
-    progressStyle,
-  );
-
-  let done = 0;
   const remoteAndSpace = new Map<string, bigint>();
 
   await Promise.all(
@@ -88,31 +78,34 @@ export async function selectRemoteAutomatically(
         const quota = await client.getDriveQuota(AbortSignal.timeout(10000));
         remoteAndSpace.set(remote, quota.remaining);
       } catch {
-        // ignore that remote
+        // silently skip unavailable remotes
       }
-      done++;
-      tracker.updateProgress(BigInt(done));
     }),
   );
 
-  process.stdout.write("\x1b[2K\r");
+  return remoteAndSpace;
+}
 
-  if (remoteAndSpace.size === 0) {
+export async function selectRemoteAutomatically(
+  _fileSize: bigint,
+): Promise<string> {
+  const quotas = await fetchRemoteQuotas();
+
+  if (quotas.size === 0) {
     throw new Error(
       "cannot get remote with the most free space: all remote were not available",
     );
   }
 
-  let selectedRemote = availRemotes[0];
+  let selectedRemote = "";
   let maxSpace = -1n;
-  for (const [remote, space] of remoteAndSpace) {
+  for (const [remote, space] of quotas) {
     if (space > maxSpace) {
       maxSpace = space;
       selectedRemote = remote;
     }
   }
 
-  console.log("Using remote with the most free space:", selectedRemote);
   return selectedRemote;
 }
 
@@ -123,34 +116,31 @@ export async function verifyFileIntegrity(
   retries = hashRetries,
   retryDelay = hashRetryDelay,
 ): Promise<void> {
-  console.log("Verifying file integrity...");
+  const s = spinner();
+  s.start("Verifying integrity...");
 
   let fileHash = "";
   let lastErr: unknown;
 
   for (let i = 0; i < retries; i++) {
+    if (i > 0) {
+      s.message(`Verifying integrity... (attempt ${i + 1}/${retries})`);
+    }
     try {
       fileHash = await client.getQuickXorHash(fileId);
       lastErr = undefined;
       break;
     } catch (err) {
       lastErr = err;
-      console.log(
-        `Attempt ${i + 1}/${retries}: Failed to get file hash: ${(err as Error).message}`,
-      );
       if (i < retries - 1) {
-        await new Promise((resolve) => setTimeout(resolve, retryDelay));
+        await new Promise<void>((resolve) => setTimeout(resolve, retryDelay));
       }
     }
   }
 
   if (lastErr !== undefined) {
-    console.log(
-      ColorYellow +
-        "Warning: Could not verify file integrity: " +
-        (lastErr as Error).message +
-        ColorReset,
-    );
+    s.stop();
+    log.warn(`Could not verify integrity: ${(lastErr as Error).message}`);
     return;
   }
 
@@ -159,11 +149,9 @@ export async function verifyFileIntegrity(
     const buf = await readFile(filePath);
     data = new Uint8Array(buf);
   } catch (err) {
-    console.log(
-      ColorYellow +
-        "Warning: Could not open local file for verification: " +
-        (err as Error).message +
-        ColorReset,
+    s.stop();
+    log.warn(
+      `Could not read local file for verification: ${(err as Error).message}`,
     );
     return;
   }
@@ -173,24 +161,15 @@ export async function verifyFileIntegrity(
     const hashBytes = QuickXorHash.sum(data);
     localHash = Buffer.from(hashBytes).toString("base64");
   } catch (err) {
-    console.log(
-      ColorYellow +
-        "Warning: Could not calculate file hash: " +
-        (err as Error).message +
-        ColorReset,
-    );
+    s.stop();
+    log.warn(`Could not calculate file hash: ${(err as Error).message}`);
     return;
   }
 
   if (localHash === fileHash) {
-    console.log(
-      `${ColorGreen}File integrity verified successfully${ColorReset}`,
-    );
+    s.stop("Integrity verified — hashes match");
   } else {
-    console.log(
-      ColorRed +
-        "Warning: File integrity check failed - hashes do not match" +
-        ColorReset,
-    );
+    s.stop();
+    log.warn("Integrity check failed — hashes do not match");
   }
 }

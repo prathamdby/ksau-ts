@@ -1,17 +1,28 @@
 import { statSync } from "node:fs";
 import path from "node:path";
+import {
+  box,
+  cancel,
+  intro,
+  isCancel,
+  log,
+  outro,
+  progress,
+  select,
+  spinner,
+} from "@clack/prompts";
 import type { Command } from "commander";
 import { AzureClient } from "../azure/client.ts";
 import { KibiByte } from "../azure/constants.ts";
 import type { UploadParams } from "../azure/types.ts";
 import {
-  type ProgressStyle,
-  ProgressTracker,
-  validStyles,
-} from "./progress/progress.ts";
+  formatBytesHuman,
+  formatBytesSpeed,
+  formatDuration,
+  SpeedTracker,
+} from "./tui.ts";
 import {
-  ColorGreen,
-  ColorReset,
+  fetchRemoteQuotas,
   getChunkSize,
   getConfigData,
   selectRemoteAutomatically,
@@ -57,24 +68,9 @@ export function registerUploadCommand(program: Command): void {
       "Delay between QuickXorHash retries in ms",
       "10000",
     )
-    .option(
-      "--progress <style>",
-      `Progress bar style for upload visualization:
-\tbasic:   [=====>     ] 45% | 5.2MB/s
-\tblocks:  █████░░░░░ 45% | 5.2MB/s
-\tmodern:  ○○●●●○○○ 45% | 5.2MB/s
-\temoji:   🟦🟦🟦⬜⬜ 45% | 5.2MB/s
-\tminimal: 45% | 5.2MB/s | 42MB/100MB | ETA: 2m30s`,
-      "modern",
-    )
-    .option(
-      "--emoji <emoji>",
-      `Custom emoji for emoji progress style. Examples:
-\t🟦 (blue square), 🟩 (green square), 🌟 (star),
-\t⭐ (yellow star), 🚀 (rocket), 📦 (package)`,
-      "🟦",
-    )
     .action(async (opts) => {
+      intro("ksau-ts upload");
+
       const filePath: string = opts.file;
       const remoteFolder: string = opts.remote;
       const remoteFileName: string = opts.remoteName || "";
@@ -84,125 +80,163 @@ export function registerUploadCommand(program: Command): void {
       const skipHash: boolean = opts.skipHash === true;
       const hashRetries: number = parseInt(opts.hashRetries, 10);
       const hashRetryDelay: number = parseInt(opts.hashRetryDelay, 10);
-      const progressStyle: string = opts.progress;
-      const customEmoji: string = opts.emoji;
 
-      if (!validStyles().includes(progressStyle as ProgressStyle)) {
-        console.log(
-          "Invalid progress style: " +
-            progressStyle +
-            "\nValid styles are: basic, blocks, modern, emoji, minimal",
-        );
-        return;
-      }
-
+      // Resolve file size
       let fileSize: bigint;
       try {
         fileSize = BigInt(statSync(filePath).size);
       } catch (err) {
-        console.log("Failed to get file info:", (err as Error).message);
-        return;
+        cancel(`Failed to get file info: ${(err as Error).message}`);
+        process.exit(1);
       }
 
+      // Remote selection
       const parentOpts = program.opts();
       let remoteConfig: string = parentOpts.remoteConfig || "";
 
       if (!remoteConfig) {
-        try {
-          remoteConfig = await selectRemoteAutomatically(
-            fileSize,
-            progressStyle as ProgressStyle,
-          );
-        } catch (err) {
-          console.log(
-            "cannot automatically determine remote to be used:",
-            (err as Error).message,
-          );
-          process.exit(1);
+        if (!process.stdout.isTTY) {
+          // Non-interactive: auto-select remote with most free space
+          try {
+            remoteConfig = await selectRemoteAutomatically(fileSize);
+            log.info(
+              `Non-interactive mode — using remote with most free space: ${remoteConfig}`,
+            );
+          } catch (err) {
+            cancel(
+              `cannot automatically determine remote to be used: ${(err as Error).message}`,
+            );
+            process.exit(1);
+          }
+        } else {
+          // Interactive: fetch quotas in parallel, then present select prompt
+          const s = spinner();
+          s.start("Checking remotes...");
+
+          let quotas: Map<string, bigint>;
+          try {
+            quotas = await fetchRemoteQuotas();
+          } catch (err) {
+            s.stop();
+            cancel(`Failed to fetch remote quotas: ${(err as Error).message}`);
+            process.exit(1);
+          }
+          s.stop();
+
+          if (quotas.size === 0) {
+            cancel("No remotes available");
+            process.exit(1);
+          }
+
+          if (quotas.size === 1) {
+            const [onlyRemote] = quotas.keys();
+            remoteConfig = onlyRemote;
+            log.step(`Using remote: ${onlyRemote} (only available)`);
+          } else {
+            // Sort descending by free space (most free first)
+            const sorted = [...quotas.entries()].sort((a, b) =>
+              b[1] > a[1] ? 1 : -1,
+            );
+            const result = await select({
+              message: "Select a remote",
+              options: sorted.map(([name, space]) => ({
+                value: name,
+                label: name,
+                hint: `${formatBytesHuman(space)} free`,
+              })),
+            });
+
+            if (isCancel(result)) {
+              cancel("Cancelled");
+              process.exit(0);
+            }
+
+            remoteConfig = result as string;
+          }
         }
       }
 
+      log.step(`Remote: ${remoteConfig}`);
+
+      // Chunk size selection
       const maxChunkSize = 160n * 320n * KibiByte;
       let chunkSizeBig: bigint;
 
       if (chunkSizeNum === 0) {
         chunkSizeBig = getChunkSize(fileSize);
-        console.log(
-          "Selected chunk size: " +
-            chunkSizeBig +
-            " bytes (based on file size: " +
-            fileSize +
-            " bytes)",
-        );
+        log.info(`Chunk size: ${formatBytesHuman(chunkSizeBig)} (auto)`);
       } else {
         chunkSizeBig = BigInt(chunkSizeNum);
         if (chunkSizeBig > maxChunkSize) {
-          console.log(
-            "Warning: Reducing chunk size from " +
-              chunkSizeBig +
-              " to " +
-              maxChunkSize +
-              " bytes for reliability",
+          log.warn(
+            `Reducing chunk size from ${formatBytesHuman(chunkSizeBig)} to ${formatBytesHuman(maxChunkSize)} for reliability`,
           );
           chunkSizeBig = maxChunkSize;
         } else if (chunkSizeBig % (320n * KibiByte) !== 0n) {
-          console.log(
-            "Warning: Chunk size " +
-              chunkSizeBig +
-              " is not multiple of 320KiB, upload may not be optimal",
+          log.warn(
+            `Chunk size ${formatBytesHuman(chunkSizeBig)} is not a multiple of 320 KiB — upload may not be optimal`,
           );
         } else {
-          console.log(`Using user-specified chunk size: ${chunkSizeBig} bytes`);
+          log.info(
+            `Chunk size: ${formatBytesHuman(chunkSizeBig)} (user-specified)`,
+          );
         }
       }
 
+      // Resolve remote file path
       const localFileName = path.basename(filePath);
       let remoteFilePath = path.posix.join(remoteFolder, localFileName);
       if (remoteFileName) {
         remoteFilePath = path.posix.join(remoteFolder, remoteFileName);
       }
 
+      // Load config and initialise client
       let configData: Uint8Array;
-      try {
-        configData = await getConfigData();
-      } catch (err) {
-        console.log("Failed to read config file:", (err as Error).message);
-        return;
-      }
-
       let client: AzureClient;
       try {
+        configData = await getConfigData();
         client = await AzureClient.fromRcloneConfigData(
           configData,
           remoteConfig,
         );
       } catch (err) {
-        console.log("Failed to initialize client:", (err as Error).message);
-        return;
+        cancel(`Failed to initialize client: ${(err as Error).message}`);
+        process.exit(1);
       }
 
       const rootFolder = client.remoteRootFolder;
       const fullRemotePath = path.posix.join(rootFolder, remoteFilePath);
-      console.log(`Full remote path: ${fullRemotePath}`);
+      log.info(`Path: ${fullRemotePath}`);
 
-      let tracker: ProgressTracker | null = new ProgressTracker(
-        fileSize,
-        progressStyle as ProgressStyle,
-      );
-      tracker.customEmoji = customEmoji;
+      // Progress — note: Number(totalSize) loses precision for files >2^53 bytes (~9 PB);
+      // acceptable for any realistic upload size.
+      const totalSize = fileSize;
+      const prog = progress({ style: "heavy", max: Number(totalSize) });
+      prog.start("Uploading...");
 
-      let progressCallback: ((uploadedBytes: bigint) => void) | null = null;
-      if (tracker !== null) {
-        progressCallback = (uploadedBytes: bigint) => {
-          if (tracker === null) return;
-          try {
-            tracker.updateProgress(uploadedBytes);
-          } catch (r) {
-            console.log(`\nWarning: Progress update failed: ${r}`);
-            tracker = null;
-          }
-        };
-      }
+      const speedTracker = new SpeedTracker();
+      let lastSpeed = 0;
+      let lastUploaded = 0n;
+      const uploadStartTime = Date.now();
+
+      const progressCallback = (uploadedBytes: bigint): void => {
+        const delta = uploadedBytes - lastUploaded;
+        lastUploaded = uploadedBytes;
+
+        const now = Date.now();
+        const newSpeed = speedTracker.update(Number(uploadedBytes), now);
+        if (newSpeed !== null) lastSpeed = newSpeed;
+
+        const totalNum = Number(totalSize);
+        const percent =
+          totalNum > 0 ? (Number(uploadedBytes) * 100) / totalNum : 0;
+        const elapsed = now - uploadStartTime;
+        const eta =
+          percent > 0 ? Math.floor(elapsed * (100 / percent) - elapsed) : 0;
+
+        const msg = `${percent.toFixed(1)}%  ${formatBytesHuman(uploadedBytes)}/${formatBytesHuman(totalSize)} · ${formatBytesSpeed(lastSpeed)} · ~${formatDuration(eta)}`;
+        prog.advance(Number(delta), msg);
+      };
 
       const params: UploadParams = {
         filePath,
@@ -212,26 +246,22 @@ export function registerUploadCommand(program: Command): void {
         retryDelay,
         accessToken: client.accessToken,
         progressCallback,
+        logger: { info: (m) => log.info(m), warn: (m) => log.warn(m) },
       };
 
       let fileID: string;
       try {
         fileID = await client.upload(params);
       } catch (err) {
-        if (tracker !== null) {
-          tracker.finish();
-        }
-        console.log("\nFailed to upload file:", (err as Error).message);
-        return;
+        prog.stop("Upload failed");
+        cancel(`Upload failed: ${(err as Error).message}`);
+        process.exit(1);
       }
 
       if (fileID !== "") {
-        if (tracker !== null) {
-          tracker.updateProgress(fileSize);
-          tracker.finish();
-        }
-        console.log("\nFile uploaded successfully.");
+        prog.stop("Upload complete");
 
+        // Construct download URL — backslashes → /, spaces → %20
         const baseURL = client.remoteBaseUrl;
         let urlPath = path.posix
           .join(remoteFolder, localFileName)
@@ -242,15 +272,7 @@ export function registerUploadCommand(program: Command): void {
             .replace(/ /g, "%20");
         }
         const downloadURL = `${baseURL}/${urlPath}`;
-        console.log(
-          ColorGreen +
-            "Download URL:" +
-            ColorReset +
-            " " +
-            ColorGreen +
-            downloadURL +
-            ColorReset,
-        );
+        box(downloadURL, "Download URL");
 
         if (!skipHash) {
           await verifyFileIntegrity(
@@ -261,11 +283,12 @@ export function registerUploadCommand(program: Command): void {
             hashRetryDelay,
           );
         }
+
+        outro("Done");
       } else {
-        if (tracker !== null) {
-          tracker.finish();
-        }
-        console.log("\nFile upload failed.");
+        prog.stop("Upload failed");
+        log.error("File upload failed.");
+        outro("Upload failed");
       }
     });
 }
